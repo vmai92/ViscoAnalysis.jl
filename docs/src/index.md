@@ -1,109 +1,141 @@
 # ViscoAnalysis.jl
 
-**ViscoAnalysis.jl** is a Julia package for analysing **complex-modulus (viscoelastic) data** from dynamic mechanical experiments on bituminous materials (asphalt mixes).
+**ViscoAnalysis.jl** is a Julia package for analysing complex-modulus (viscoelastic) data
+from dynamic mechanical analysis (DMA) experiments on bituminous materials (asphalt, etc.).
 
-It provides a complete analysis workflow — from reading Excel measurement files to identifying rheological model parameters — together with publication-quality diagnostic figures.
+It provides a complete, self-contained workflow from raw Excel data to publication-quality
+figures and rheological model parameters.
 
 ---
 
 ## Features
 
-- **Data loading** from `.xlsx` files (isothermal sweeps or isochrone layouts)
-- **Time-Temperature Superposition (TTS)** via the WLF equation — master curve construction
-- **Kramers–Kronig verification** — causality check on experimental data
-- **Rheological model fitting**:
-  - 2S2P1D (2 Springs, 2 Parabolic elements, 1 Dashpot) — 7 parameters
-  - 1S2P1D (no glassy spring) — 6 parameters
-  - Huet-Sayegh (no dashpot) — 6 parameters
-  - Generalised Maxwell — arbitrary number of elements
-- **Diagnostic plots**: isotherms, isochronals, Cole-Cole, Black diagram, WLF, model fit overlay
+| Feature | Description |
+|---------|-------------|
+| **Data import** | Read multi-sheet Excel workbooks; one sheet = one test condition |
+| **Time-temperature superposition** | Automatic WLF shift-factor computation and master-curve construction |
+| **Model identification** | Global optimisation for 2S2P1D, 1S2P1D, and Huet-Sayegh models |
+| **Diagnostic plots** | Isothermal, isochrone, Cole-Cole, Black, Kramers-Kronig, WLF |
+| **Model overlay plots** | Experimental master curve vs fitted model |
 
 ---
 
 ## Installation
 
-ViscoAnalysis.jl is a local package. To add it from its folder:
+From the Julia REPL, activate the package environment and instantiate dependencies:
 
 ```julia
-using Pkg
-Pkg.develop(path="path/to/ViscoAnalysis")
+] activate path/to/ViscoAnalysis
+] instantiate
 ```
 
-Or, once registered on a registry:
+Or add it as a development dependency from another project:
 
 ```julia
-using Pkg
-Pkg.add("ViscoAnalysis")
+] dev path/to/ViscoAnalysis
 ```
 
 ---
 
-## Quick Example
+## Quick start
 
 ```julia
 using ViscoAnalysis
 
-# 1. Load data (modulus in MPa)
-series = load_data("my_data.xlsx"; MPa=true)
+# 1. Load all sheets from an Excel workbook
+#    MPa=true  → modulus column is already in MPa
+#    MPa=false → modulus column is in Pa, converted to MPa automatically
+series = load_data("data.xlsx"; MPa=true)
 
-# 2. All diagnostic plots → results/ folder
-plot_all(series, "results/")
+# 2. Generate all diagnostic plots
+plot_all(series, "results/"; Tref=10.0)
 
-# 3. Fit the 2S2P1D model at Tref = 10 °C
+# 3. Fit the 2S2P1D model on the master curve at Tref = 10 °C
 result = fit2S2P1D(series[1], 10.0)
 println(result)
 
-# 4. Overlay model on experimental data
+# 4. Overlay the fitted model on the master curve
 plot_model_fit(series, [result], "results/"; Tref=10.0)
 
-# 5. Evaluate the model at 10 Hz
-ω = 2π * 10.0
-E_star  = result(ω)           # complex modulus [MPa]
-E_norm  = abs(E_star)         # |E*| [MPa]
-phi_deg = angle(E_star)*180/π # phase angle φ [°]
+# 5. Evaluate the model at a specific frequency
+ω = 2π * 10.0          # 10 Hz → rad/s
+E_star = result(ω)
+@show abs(E_star)              # |E*| [MPa]
+@show angle(E_star) * 180/π   # φ   [°]
 ```
+
+See [Getting Started](@ref) for a full walkthrough, or jump to the [API Reference](@ref load_data).
 
 ---
 
-## Analysis Workflow
+## Workflow overview
 
 ```
 Excel file (.xlsx)
-      │
-      ▼
-  load_data()              → Vector{DataSeries}
-      │
-      ▼
-  build_shift_factors!()   → WLF coefficients (C₁, C₂)
-      │
-      ▼
-  build_master_curve()     → reduced-frequency master curve
-      │
-      ▼
-  fit2S2P1D() / fitHS()    → FitResult (callable model)
-      │
-      ▼
-  plot_model_fit()         → PDF + PNG figures
+        │
+        ▼
+   load_data()           → Vector{DataSeries}    (one per sheet)
+        │
+        ▼
+build_shift_factors!()   → WLF coefficients C1, C2  stored in DataSeries
+        │
+        ▼
+build_master_curve()     → reduced-frequency master curve at Tref
+        │
+        ▼
+fit2S2P1D / fit1S2P1D    → FitResult  (model parameters + residual)
+ / fitHS
+        │
+   ┌────┴─────┐
+   ▼          ▼
+plot_all()  plot_model_fit()   → PDF + PNG figures
 ```
 
 ---
 
-## Package Information
+## Exported symbols
 
-| | |
-|---|---|
-| **Version** | 0.1.0 |
-| **Author** | Van Than MAI |
-| **Julia** | ≥ 1.9 |
-| **License** | MIT |
-| **Source** | [GitHub](https://github.com/Van-Than-MAI/ViscoAnalysis.jl) |
+### Types
+```
+AbstractFitResult   DataSeries
+FitResult2S2P1D     FitResult1S2P1D     FitResultHS
+model_name
+```
+
+### Data I/O
+```
+load_data
+```
+
+### Models
+```
+Mod2S2P1D   Mod1S2P1D   ModHS   ModGM
+wlf_scalar  T_TEV       change_Tref_WLF
+```
+
+### Analysis
+```
+build_shift_factors!   build_master_curve   build_Kramers_Kronig!
+fit2S2P1D   fit1S2P1D   fitHS
+eval_model  eval_array
+```
+
+### Plotting
+```
+plot_all            plot_isothermes     plot_isochrones
+plot_cole_cole      plot_black          plot_kramers_kronig
+plot_wlf            plot_wlf_stability  plot_model_fit
+```
 
 ---
 
-## Contents
+## Dependencies
 
-```@contents
-Pages = ["getting_started.md", "theory.md",
-         "api/io.md", "api/models.md", "api/fitting.md", "api/plotting.md"]
-Depth = 2
-```
+| Package | Purpose |
+|---------|---------|
+| [XLSX.jl](https://github.com/felipenoris/XLSX.jl) | Read Excel workbooks |
+| [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl) | Tabular data |
+| [Plots.jl](https://github.com/JuliaPlots/Plots.jl) (GR backend) | Figures |
+| [LaTeXStrings.jl](https://github.com/JuliaStrings/LaTeXStrings.jl) | LaTeX axis labels |
+| [LsqFit.jl](https://github.com/JuliaNLSolvers/LsqFit.jl) | WLF nonlinear least-squares |
+| [NLopt.jl](https://github.com/JuliaOpt/NLopt.jl) | Global model optimisation |

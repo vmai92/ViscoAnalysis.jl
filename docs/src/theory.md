@@ -1,307 +1,207 @@
-# Theory
+# Theoretical Background
 
-This page presents the mathematical framework underlying ViscoAnalysis.jl.
-The models and equations follow the methodology established at [IFSTTAR/Gustave Eiffel University](https://viscoanalyse-database.ifsttar.fr/) for the characterisation of bituminous materials.
+This page summarises the physics and mathematics behind the algorithms implemented
+in ViscoAnalysis.jl.
 
 ---
 
-## 1. Complex Modulus
+## 1. Linear viscoelasticity and complex modulus
 
-The mechanical behaviour of a linear viscoelastic material under sinusoidal loading
-at angular frequency ``\omega`` is fully characterised by the **complex modulus**:
+A linear viscoelastic material subject to a sinusoidal strain
+``\varepsilon(t) = \varepsilon_0 \, e^{i\omega t}``
+responds with a sinusoidal stress
+``\sigma(t) = \sigma_0 \, e^{i(\omega t + \varphi)}``.
+The ratio defines the **complex modulus**:
 
 ```math
-E^*(\omega) = |E^*(\omega)|\, e^{i\varphi(\omega)}
+E^*(\omega) = \frac{\sigma_0}{\varepsilon_0} e^{i\varphi}
             = E_1(\omega) + i\, E_2(\omega)
 ```
 
-| Quantity | Symbol | Definition |
-|----------|--------|-----------|
-| Magnitude | ``|E^*|`` | ``\sqrt{E_1^2 + E_2^2}`` |
-| Phase angle | ``\varphi`` | ``\arctan(E_2 / E_1)`` |
-| Storage modulus | ``E_1`` | ``|E^*|\cos\varphi`` |
-| Loss modulus | ``E_2`` | ``|E^*|\sin\varphi`` |
+where:
+- ``E_1 = |E^*|\cos\varphi`` is the **storage modulus** (elastic part),
+- ``E_2 = |E^*|\sin\varphi`` is the **loss modulus** (viscous part),
+- ``\varphi`` is the **phase angle** (loss angle),
+- ``|E^*| = \sqrt{E_1^2 + E_2^2}`` is the **complex modulus norm**.
 
-The symbol ``M^*`` is used in the general case where the modulus may be either a
-tensile-compression modulus ``E^*`` or a shear modulus ``G^*``.
+DMA experiments directly measure ``|E^*|`` and ``\varphi`` at discrete frequencies
+and temperatures.
 
 ---
 
-## 2. Time-Temperature Superposition (TTS)
+## 2. Time-temperature superposition (WLF)
 
-Bituminous materials are **thermo-rheologically simple**: the frequency response at
-temperature ``T`` can be mapped onto the response at a reference temperature ``T_\text{ref}``
-by a multiplicative shift of the frequency axis.
-
-The **reduced angular frequency** is:
+Bituminous materials are **thermorheologically simple**: a change in temperature
+is equivalent to a shift in the frequency axis.  This is expressed by the
+**shift factor** ``a_T``:
 
 ```math
-\omega_\text{r} = a_T(T) \cdot \omega
+E^*(\omega, T) = E^*(\omega \cdot a_T(T), T_{\text{ref}})
 ```
 
-where ``a_T`` is the **shift factor** (dimensionless).
+### Williams-Landel-Ferry (WLF) equation
 
-### 2.1 Shift factor estimation (LCPC method)
-
-The shift factor between two successive temperatures is estimated from the
-Booij–Thoone approximation:
+The shift factor follows the empirical WLF law:
 
 ```math
-\varphi(\omega) \approx \frac{\pi}{2}\,
-    \frac{\mathrm{d}\log|M^*(\omega)|}{\mathrm{d}\log\omega}
+\log_{10}(a_T) = \frac{-C_1 \,(T - T_{\text{ref}})}{C_2 + T - T_{\text{ref}}}
 ```
 
-This gives:
+The constants ``C_1`` and ``C_2`` are identified by nonlinear least-squares fitting
+(using [LsqFit.jl](https://github.com/JuliaNLSolvers/LsqFit.jl)) from the
+experimentally-derived shift factors.
+
+### Change of reference temperature
+
+WLF coefficients at one reference temperature can be exactly converted to another:
 
 ```math
-\log_{10} a_{T_i,T_\text{ref}}
-= \sum_{T_j = T_\text{ref}}^{T_i}
-  \frac{\log|M^*(T_j,\omega)| - \log|M^*(T_{j+1},\omega)|}
-       {\bar{\varphi}^{T_j, T_{j+1}}(\omega) \cdot \pi/2 / 90}
+C_2^{\text{new}} = C_2^{\text{old}} + (T_{\text{new}} - T_{\text{old}})
+\qquad
+C_1^{\text{new}} = C_1^{\text{old}} \,\frac{C_2^{\text{old}}}{C_2^{\text{new}}}
 ```
 
-where ``\bar{\varphi}`` is the average phase angle between temperatures ``T_j``
-and ``T_{j+1}``.
+### Master curve
 
-### 2.2 WLF equation
-
-The shift factors are fitted by the **Williams–Landel–Ferry (WLF)** equation:
+Applying the WLF shift to all isothermal sweeps collapses them onto a single
+**master curve** at ``T_{\text{ref}}``:
 
 ```math
-\log_{10} a_T(T) = \frac{-C_1 (T - T_\text{ref})}{C_2 + T - T_\text{ref}}
-```
-
-``C_1`` and ``C_2`` are material constants that depend on the choice of reference
-temperature. They are related to an alternative reference ``T_\text{ref}'`` by the
-exact transformation:
-
-```math
-C_2^{\text{new}} = C_2^{\text{old}} + T_\text{ref}^\text{new} - T_\text{ref}^\text{old}
-```
-
-```math
-C_1^{\text{new}} = \frac{C_1^{\text{old}}\, C_2^{\text{old}}}{C_2^{\text{new}}}
-```
-
-### 2.3 Equivalent temperature
-
-The **inverse WLF** gives the temperature at which frequency ``\omega`` is
-equivalent to ``\omega_c`` measured at ``T_\text{ref}``:
-
-```math
-T_\text{eq} =
-\frac{T_\text{ref}\, C_1 - \bigl(\log_{10}\omega_c - \log_{10}\omega\bigr)
-     (C_2 - T_\text{ref})}
-     {C_1 + \bigl(\log_{10}\omega_c - \log_{10}\omega\bigr)}
+\omega_{\text{red}} = \omega \cdot a_T(T)
 ```
 
 ---
 
-## 3. Rheological Models
+## 3. Rheological models
 
-All models express the complex modulus as a function of the complex variable
-``p = i\omega``. The relaxation time ``\tau`` is temperature-dependent through the
-WLF shift: ``\tau(T) = \tau(T_\text{ref}) / a_T(T)``.
+All three models are written in the **complex (Laplace) domain** with
+``p = i\omega``.
 
 ### 3.1 2S2P1D model
 
-The **2S2P1D model** (2 Springs, 2 Parabolic elements, 1 Dashpot) was introduced by
-Olard & Di Benedetto (2003). It is the reference model for bituminous materials.
+The **2 Springs, 2 Parabolic elements, 1 Dashpot** model (Olard & Di Benedetto, 2003)
+uses 7 parameters:
 
 ```math
-\boxed{
 E^*(p) = E_\infty + \frac{E_0 - E_\infty}
-         {1 + \delta\,(p\tau)^{-k} + (p\tau)^{-h} + (p\beta\tau)^{-1}}
-}
+         {1 + \delta\,(p\tau)^{-k} + (p\tau)^{-h} + \dfrac{1}{p\,\beta\,\tau}}
 ```
 
-**Mechanical analogy:**
+| Parameter | Symbol | Description |
+|-----------|--------|-------------|
+| `Einf` | ``E_\infty`` | Glassy (high-frequency) modulus [MPa] |
+| `E0` | ``E_0`` | Static (zero-frequency) modulus [MPa] |
+| `delta` | ``\delta`` | Shape parameter |
+| `tauE` | ``\tau_E`` | Characteristic relaxation time [s] |
+| `k` | ``k`` | Low-frequency parabolic exponent (``0 < k < h``) |
+| `h` | ``h`` | High-frequency parabolic exponent (``k < h \leq 1``) |
+| `beta` | ``\beta`` | Dashpot coefficient |
 
-```
-  ──[E∞]──────────────────────────────────────────────
-             │
-         ┌───┴───┐
-         │       │
-      [E₀-E∞]   ─[δ, k]─ [h] ─ [β] ─
-         │       │
-         └───┬───┘
-             │
-  ─────────────────────────────────────────────────────
-```
+**Limiting behaviour:**
+- ``\omega \to 0``: ``E^* \to E_0`` (purely elastic, low stiffness)
+- ``\omega \to \infty``: ``E^* \to E_\infty`` (glassy, high stiffness)
 
-**Parameters:**
+### 3.2 1S2P1D model
 
-| Symbol | Name | Unit | Constraint |
-|--------|------|------|-----------|
-| ``E_\infty`` | Glassy (high-freq.) modulus | MPa | ``E_\infty > E_0`` |
-| ``E_0`` | Static (zero-freq.) modulus | MPa | ``E_0 > 0`` |
-| ``\delta`` | Shape parameter | — | ``\delta > 0`` |
-| ``\tau`` | Relaxation time at ``T_\text{ref}`` | s | ``\tau > 0`` |
-| ``k`` | Low-freq. fractional exponent | — | ``0 < k < h`` |
-| ``h`` | High-freq. fractional exponent | — | ``k < h \leq 1`` |
-| ``\beta`` | Dashpot coefficient | — | ``\beta > 0`` |
-
-**Asymptotic behaviour:**
+The **1 Spring** variant removes the high-frequency spring, so ``E_\infty`` is
+absorbed into the denominato numerics (effectively ``E_\infty = 0`` for the
+standalone spring term), using 6 parameters:
 
 ```math
-\lim_{\omega \to \infty} |E^*| = E_\infty, \qquad
-\lim_{\omega \to 0} |E^*| = E_0, \qquad
-\lim_{\omega \to 0} \varphi = 90° \cdot k
+E^*(p) = \frac{E_0}
+         {1 + \delta\,(p\tau)^{-k} + (p\tau)^{-h} + \dfrac{1}{p\,\beta\,\tau}}
 ```
 
----
+### 3.3 Huet-Sayegh model
 
-### 3.2 Huet-Sayegh model (HS)
-
-The **Huet-Sayegh model** is obtained by removing the dashpot from 2S2P1D
-(``\beta \to \infty``). It is appropriate when low-frequency viscous flow is
-negligible.
+The **Huet-Sayegh** model (Huet, 1963; Sayegh, 1965) drops the dashpot (``\beta \to \infty``),
+giving 6 parameters:
 
 ```math
-\boxed{
 E^*(p) = E_\infty + \frac{E_0 - E_\infty}
          {1 + \delta\,(p\tau)^{-k} + (p\tau)^{-h}}
-}
 ```
 
-This model has **6 parameters**: ``E_\infty, E_0, \delta, \tau, k, h``.
+Because there is no dashpot, this model predicts zero phase angle at very low
+frequencies and cannot represent long-term creep.
 
-At low frequencies the phase angle tends to **zero** (purely elastic behaviour),
-unlike 2S2P1D which tends to 90° × k.
+### 3.4 Generalised Maxwell model
 
----
-
-### 3.3 1S2P1D model
-
-The **1S2P1D model** (1 Spring, 2 Parabolic, 1 Dashpot) removes the glassy spring
-``E_\infty``, effectively setting ``E_\infty \to \infty``. It is used for materials
-that do not exhibit a clear glassy plateau.
+The **Generalised Maxwell** (Prony series) model is also available for use with
+custom spring-dashpot chains:
 
 ```math
-\boxed{
-E^*(p) = \frac{E_0}
-         {1 + \delta\,(p\tau)^{-k} + (p\tau)^{-h} + (p\beta\tau)^{-1}}
-}
+E^*(p) = \sum_{i} \frac{E_i\, p\,\tau_i}{1 + p\,\tau_i}
 ```
-
-This model has **6 parameters**: ``E_0, \delta, \tau, k, h, \beta``.
 
 ---
 
-### 3.4 Huet model (1S2P)
+## 4. Model identification strategy
 
-The **Huet model** combines the 1S2P1D restriction (``E_\infty \to \infty``) with
-the Huet-Sayegh restriction (``\beta \to \infty``):
+All three models are identified by **global optimisation** of a weighted
+least-squares objective computed on the complex master curve:
 
 ```math
-\boxed{
-E^*(p) = \frac{E_0}
-         {1 + \delta\,(p\tau)^{-k} + (p\tau)^{-h}}
-}
+J = \sum_k \Delta\log\omega_k \left|1 - \frac{E^*(\omega_k)}{E^*_{\text{exp}}(\omega_k)}\right|^2
 ```
 
-This model has **5 parameters**: ``E_0, \delta, \tau, k, h``.
+The ``\Delta\log\omega`` weight ensures that every decade of frequency contributes
+equally regardless of the number of measurement points it contains.
+
+| Model | Optimiser | Max evaluations | Constraint |
+|-------|-----------|-----------------|-----------|
+| 2S2P1D | NLopt `:LN_SBPLX` (Nelder-Mead simplex) | 100 000 | ``k < h`` |
+| 1S2P1D | NLopt `:LN_NELDERMEAD` | 500 000 | ``k < h`` |
+| Huet-Sayegh | NLopt `:LN_NELDERMEAD` | 500 000 | ``k < h`` |
 
 ---
 
-### 3.5 Model comparison
+## 5. Kramers-Kronig verification
 
-| Model | Parameters | ``E_\infty`` | Dashpot |
-|-------|-----------|:---:|:---:|
-| 2S2P1D | 7 | yes | yes |
-| Huet-Sayegh | 6 | yes | no |
-| 1S2P1D | 6 | no | yes |
-| Huet | 5 | no | no |
-
----
-
-### 3.6 Generalised Maxwell model
-
-The **Generalised Maxwell (Prony series)** model sums ``N`` Maxwell branches:
+For a linear viscoelastic material, the real and imaginary parts of ``E^*`` are
+not independent — they are related by the **Kramers-Kronig relations**.
+A practical consequence (Booij & Thoone, 1982 — the "BT2" approximation) is:
 
 ```math
-G^*(p) = E_1 + \sum_{i=2}^{N} \frac{E_i\, \tau_i\, p}{1 + \tau_i\, p}
+\frac{\varphi(\omega)}{90°} \approx \frac{d\log|E^*|}{d\log\omega}
 ```
 
-where ``E_i`` are partial stiffnesses and ``\tau_i`` are relaxation times.
-This model is often used as a reference representation after conversion from
-2S2P1D parameters.
+ViscoAnalysis computes both sides numerically and displays them on a scatter plot.
+Points lying close to the identity line ``y = x`` indicate consistent, reliable
+viscoelastic measurements.
 
 ---
 
-## 4. Kramers-Kronig Relations
+## 6. Cole-Cole and Black diagrams
 
-For any causal linear viscoelastic material (i.e. the response cannot precede the
-loading), the storage and loss parts of the complex modulus are linked by the
-**Kramers-Kronig (KK) relations**. The BT2 approximation (Booij & Thoone 1982)
-provides a practical check:
+These are standard representation planes for comparing different materials or
+temperature conditions independently of the frequency axis:
 
-```math
-\varphi(\omega) \approx \frac{\pi}{2}\,
-\frac{\mathrm{d}\log|M^*(\omega)|}{\mathrm{d}\log\omega}
-```
+| Diagram | x-axis | y-axis | Scale |
+|---------|--------|--------|-------|
+| **Cole-Cole** | ``E_1`` (storage modulus) | ``E_2`` (loss modulus) | log-log |
+| **Black** | ``\varphi`` (phase angle) | ``|E^*|`` (modulus norm) | linear-log |
 
-The relative KK error at each frequency is:
-
-```math
-\varepsilon_\text{KK}(\omega) =
-\left|\frac{\varphi(\omega)/90}
-           {\mathrm{d}\log|M^*|/\mathrm{d}\log\omega} - 1\right|
-```
-
-A good dataset should have ``\varepsilon_\text{KK} \lesssim 5\%`` across the entire
-frequency range. Larger errors typically indicate measurement artefacts or
-non-linear behaviour.
-
----
-
-## 5. Identification Objective Function
-
-Model parameters are identified by minimising a **log-frequency-weighted
-least-squares** objective over the complex master curve:
-
-```math
-J = \sum_{i=1}^{N} \Delta\log\omega_i
-    \left|1 - \frac{E^*_\text{model}(\omega_i)}{E^*_\text{data}(\omega_i)}\right|^2
-```
-
-where ``\Delta\log\omega_i`` is the local frequency spacing in log scale, giving
-equal importance to each frequency decade regardless of sampling density.
-
-The optimisation uses **derivative-free algorithms** from NLopt:
-
-| Model | Algorithm | Max evaluations |
-|-------|-----------|----------------|
-| 2S2P1D | `:LN_SBPLX` | 100 000 |
-| 1S2P1D | `:LN_NELDERMEAD` | 500 000 |
-| Huet-Sayegh | `:LN_NELDERMEAD` | 500 000 |
-
----
-
-## 6. Representation Diagrams
-
-Three standard diagrams are used to visualise complex modulus data:
-
-### Black diagram
-``|E^*|`` (log scale) versus ``\varphi``. A material that follows TTS traces a
-**unique curve** independent of temperature, making the Black diagram a powerful
-way to validate superposition.
-
-### Cole-Cole diagram
-Loss modulus ``E_2`` versus storage modulus ``E_1`` on log-log axes. Like the Black
-diagram, a TTS-valid material traces a single arch.
-
-### Isothermal / isochronal sweeps
-- **Isothermal**: ``|E^*|`` and ``\varphi`` as a function of frequency at fixed
-  temperature.
-- **Isochronal**: ``|E^*|`` and ``\varphi`` as a function of temperature at fixed
-  frequency.
+Both are parametrised by frequency; a perfect thermorheologically simple material
+produces a unique curve independent of temperature.
 
 ---
 
 ## References
 
-- Olard, F. & Di Benedetto, H. (2003). *General "2S2P1D" model and relation between the linear viscoelastic behaviours of bituminous binders and mixes.* Road Materials and Pavement Design, 4(2), 185–224.
-- Di Benedetto, H., Delaporte, B. & Sauzéat, C. (2007). *Three-dimensional linear behavior of bituminous materials: experiments and modeling.* International Journal of Geomechanics, ASCE, 7(2), 149–157.
-- Booij, H.C. & Thoone, G.P.J.M. (1982). *Generalization of Kramers-Kronig transforms and some approximations of relations between viscoelastic quantities.* Rheologica Acta, 21, 15–24.
-- Williams, M.L., Landel, R.F. & Ferry, J.D. (1955). *The temperature dependence of relaxation mechanisms in amorphous polymers and other glass-forming liquids.* Journal of the American Chemical Society, 77(14), 3701–3707.
+- Di Benedetto, H., Olard, F., Sauzeat, C., & Delaporte, B. (2004). *Linear viscoelastic
+  behaviour of bituminous materials: from binders to mixes*. Road Materials and Pavement
+  Design, 5(sup1), 163–202.
+- Olard, F., & Di Benedetto, H. (2003). *General "2S2P1D" model and relation between the
+  linear viscoelastic behaviours of bituminous binders and mixes*. Road Materials and
+  Pavement Design, 4(2), 185–224.
+- Huet, C. (1963). *Étude par une méthode d'impédance du comportement viscoélastique des
+  matériaux hydrocarbonés*. PhD thesis, Université de Paris.
+- Sayegh, G. (1965). *Contribution à l'étude des propriétés viscoélastiques des bitumes
+  purs et des bétons bitumineux*. PhD thesis, Université de Paris.
+- Williams, M. L., Landel, R. F., & Ferry, J. D. (1955). *The temperature dependence of
+  relaxation mechanisms in amorphous polymers and other glass-forming liquids*. Journal of
+  the American Chemical Society, 77(14), 3701–3707.
+- Booij, H. C., & Thoone, G. P. J. M. (1982). *Generalization of Kramers-Kronig transforms
+  and some approximations of relations between viscoelastic quantities*. Rheologica Acta,
+  21(1), 15–24.
