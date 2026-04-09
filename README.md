@@ -1,5 +1,8 @@
 # ViscoAnalysis.jl
 
+[![Build Status](https://github.com/vmai92/ViscoAnalysis.jl/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/vmai92/ViscoAnalysis.jl/actions/workflows/docs.yml?query=branch%3Amain)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://vmai92.github.io/ViscoAnalysis.jl/dev/)
+
 Julia package for analysing complex-modulus (viscoelastic) data from dynamic
 mechanical experiments on bituminous materials.
 
