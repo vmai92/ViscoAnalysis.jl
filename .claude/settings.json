@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:chemistrytools.github.io)",
+      "WebFetch(domain:viscoanalyse-database.ifsttar.fr)"
+    ]
+  }
+}

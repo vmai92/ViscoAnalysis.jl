@@ -1,0 +1,7 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ViscoAnalysis = "c8e6a853-8e68-4a27-b291-bfa7f0c13b87"
+
+[compat]
+Documenter = "1"
+julia = "1.9"
