@@ -15,7 +15,7 @@ figures and rheological model parameters.
 | **Data import** | Read multi-sheet Excel workbooks; one sheet = one test condition |
 | **Time-temperature superposition** | Automatic WLF shift-factor computation and master-curve construction |
 | **Model identification** | Global optimisation for 2S2P1D, 1S2P1D, and Huet-Sayegh models |
-| **Diagnostic plots** | Isotherms, isochrone, Cole-Cole, Black, Kramers-Kronig, WLF |
+| **Diagnostic plots** | Isotherm, isochrone, Cole-Cole, Black, Kramers-Kronig, WLF |
 | **Model overlay plots** | Experimental master curve vs fitted model |
 
 ---
