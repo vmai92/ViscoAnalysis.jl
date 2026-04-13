@@ -29,15 +29,62 @@ and temperatures.
 
 ---
 
-## 2. Time-temperature superposition (WLF)
+## 2. Time-temperature superposition
 
-Bituminous materials are **thermorheologically simple**: a change in temperature
-is equivalent to a shift in the frequency axis.  This is expressed by the
+Bituminous materials are **thermorheologically simple**: a change in temperature is equivalent to a shift in the frequency axis.  This is expressed by the
 **shift factor** ``a_T``:
 
 ```math
 E^*(\omega, T) = E^*(\omega \cdot a_T(T), T_{\text{ref}})
 ```
+
+---
+
+### Cole-Cole and Black diagrams
+
+These are standard representation planes for comparing different materials or
+temperature conditions independently of the frequency axis:
+
+| Diagram | x-axis | y-axis | 
+|---------|--------|--------|
+| **Cole-Cole** | ``E_1`` (storage modulus) | ``E_2`` (loss modulus) |
+| **Black** | ``\varphi`` (phase angle) | ``E^*`` (modulus norm) |
+
+Both are parametrised by frequency; a perfect thermorheologically simple material produces a unique curve independent of temperature.
+
+The continuity of these curves enables verification of the validity of the time–temperature equivalence principle
+
+---
+
+## 3. Master curve construction
+
+The validation of the Time–Temperature Superposition principle allows for the construction of a master curve.
+
+### Kramers-Kronig verification
+
+For a linear viscoelastic material, the real and imaginary parts of ``E^*`` are not independent — they are related by the **Kramers-Kronig relations**. A practical consequence (Booij & Thoone, 1982) is:
+
+```math
+\frac{\varphi(\omega)}{90°} \approx \frac{d\log|E^*|}{d\log\omega}
+```
+
+ViscoAnalysis computes both sides numerically and displays them on a scatter plot.
+Points lying close to the identity line ``y = x`` indicate consistent, reliable
+viscoelastic measurements.
+
+### Determination of shift factor ``a_T``
+
+The shift factor ``a_T`` are computed incrementally from one temperature to the next using the phase angle and the modulus gradient:
+
+```math
+\log(a_T(T_i, T_{\text{ref}})) = \frac{\pi}{2}
+\left(
+  \sum_{k=i}^{k=\text{ref}}
+  \frac{\log\!\left(|E^*(T_k,\omega)|\right) - \log\!\left(|E^*(T_{k+1},\omega)|\right)}
+       {{\varphi_{\text{avr}}}^{T_{k,k+1}}}
+\right)
+```
+
 
 ### Williams-Landel-Ferry (WLF) equation
 
@@ -63,12 +110,15 @@ C_1^{\text{new}} = C_1^{\text{old}} \,\frac{C_2^{\text{old}}}{C_2^{\text{new}}}
 
 ### Master curve
 
-Applying the WLF shift to all isothermal sweeps collapses them onto a single
+Applying the WLF shift to all isotherms sweeps collapses them onto a single
 **master curve** at ``T_{\text{ref}}``:
 
 ```math
 \omega_{\text{red}} = \omega \cdot a_T(T)
 ```
+
+where ``\omega_{\text{red}}`` is the **reduced angular frequency** — the measured
+angular frequency ``\omega`` shifted to the reference temperature ``T_{\text{ref}}``.
 
 ---
 
@@ -86,20 +136,6 @@ uses 7 parameters:
 E^*(p) = E_\infty + \frac{E_0 - E_\infty}
          {1 + \delta\,(p\tau)^{-k} + (p\tau)^{-h} + \dfrac{1}{p\,\beta\,\tau}}
 ```
-
-| Parameter | Symbol | Description |
-|-----------|--------|-------------|
-| `Einf` | ``E_\infty`` | Glassy (high-frequency) modulus [MPa] |
-| `E0` | ``E_0`` | Static (zero-frequency) modulus [MPa] |
-| `delta` | ``\delta`` | Shape parameter |
-| `tauE` | ``\tau_E`` | Characteristic relaxation time [s] |
-| `k` | ``k`` | Low-frequency parabolic exponent (``0 < k < h``) |
-| `h` | ``h`` | High-frequency parabolic exponent (``k < h \leq 1``) |
-| `beta` | ``\beta`` | Dashpot coefficient |
-
-**Limiting behaviour:**
-- ``\omega \to 0``: ``E^* \to E_0`` (purely elastic, low stiffness)
-- ``\omega \to \infty``: ``E^* \to E_\infty`` (glassy, high stiffness)
 
 ### 3.2 1S2P1D model
 
@@ -122,31 +158,17 @@ E^*(p) = E_\infty + \frac{E_0 - E_\infty}
          {1 + \delta\,(p\tau)^{-k} + (p\tau)^{-h}}
 ```
 
-Because there is no dashpot, this model predicts zero phase angle at very low
-frequencies and cannot represent long-term creep.
-
-### 3.4 Generalised Maxwell model
-
-The **Generalised Maxwell** (Prony series) model is also available for use with
-custom spring-dashpot chains:
-
-```math
-E^*(p) = \sum_{i} \frac{E_i\, p\,\tau_i}{1 + p\,\tau_i}
-```
-
 ---
 
 ## 4. Model identification strategy
 
-All three models are identified by **global optimisation** of a weighted
-least-squares objective computed on the complex master curve:
+All three models are identified by **global optimisation** of a weighted least-squares objective computed on the complex master curve:
 
 ```math
 J = \sum_k \Delta\log\omega_k \left|1 - \frac{E^*(\omega_k)}{E^*_{\text{exp}}(\omega_k)}\right|^2
 ```
 
-The ``\Delta\log\omega`` weight ensures that every decade of frequency contributes
-equally regardless of the number of measurement points it contains.
+The ``\Delta\log\omega`` weight ensures that every decade of frequency contributes equally regardless of the number of measurement points it contains.
 
 | Model | Optimiser | Max evaluations | Constraint |
 |-------|-----------|-----------------|-----------|
@@ -156,42 +178,8 @@ equally regardless of the number of measurement points it contains.
 
 ---
 
-## 5. Kramers-Kronig verification
-
-For a linear viscoelastic material, the real and imaginary parts of ``E^*`` are
-not independent — they are related by the **Kramers-Kronig relations**.
-A practical consequence (Booij & Thoone, 1982 — the "BT2" approximation) is:
-
-```math
-\frac{\varphi(\omega)}{90°} \approx \frac{d\log|E^*|}{d\log\omega}
-```
-
-ViscoAnalysis computes both sides numerically and displays them on a scatter plot.
-Points lying close to the identity line ``y = x`` indicate consistent, reliable
-viscoelastic measurements.
-
----
-
-## 6. Cole-Cole and Black diagrams
-
-These are standard representation planes for comparing different materials or
-temperature conditions independently of the frequency axis:
-
-| Diagram | x-axis | y-axis | Scale |
-|---------|--------|--------|-------|
-| **Cole-Cole** | ``E_1`` (storage modulus) | ``E_2`` (loss modulus) | log-log |
-| **Black** | ``\varphi`` (phase angle) | ``|E^*|`` (modulus norm) | linear-log |
-
-Both are parametrised by frequency; a perfect thermorheologically simple material
-produces a unique curve independent of temperature.
-
----
-
 ## References
 
-- Di Benedetto, H., Olard, F., Sauzeat, C., & Delaporte, B. (2004). *Linear viscoelastic
-  behaviour of bituminous materials: from binders to mixes*. Road Materials and Pavement
-  Design, 5(sup1), 163–202.
 - Olard, F., & Di Benedetto, H. (2003). *General "2S2P1D" model and relation between the
   linear viscoelastic behaviours of bituminous binders and mixes*. Road Materials and
   Pavement Design, 4(2), 185–224.
@@ -199,6 +187,9 @@ produces a unique curve independent of temperature.
   matériaux hydrocarbonés*. PhD thesis, Université de Paris.
 - Sayegh, G. (1965). *Contribution à l'étude des propriétés viscoélastiques des bitumes
   purs et des bétons bitumineux*. PhD thesis, Université de Paris.
+- Chailleux, E., Ramond, G., Such, C., & de La Roche, C. (2006). *A mathematical-based
+  master-curve construction method applied to complex modulus of bituminous materials*.
+  Road Materials and Pavement Design, 7(sup1), 75–92.
 - Williams, M. L., Landel, R. F., & Ferry, J. D. (1955). *The temperature dependence of
   relaxation mechanisms in amorphous polymers and other glass-forming liquids*. Journal of
   the American Chemical Society, 77(14), 3701–3707.

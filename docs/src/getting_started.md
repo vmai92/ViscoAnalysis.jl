@@ -17,7 +17,7 @@ Each sheet of the workbook must contain exactly **four columns** with a header r
 | 3 | Complex modulus norm \|E\*\| | Pa **or** MPa |
 | 4 | Phase angle φ | degrees (°) |
 
-**Row organisation (isothermal mode, default):**  
+**Row organisation (isotherms mode, default):**  
 All frequencies for one temperature appear consecutively, then the next temperature
 block begins.
 
