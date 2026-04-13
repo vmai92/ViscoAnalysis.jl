@@ -1,8 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:chemistrytools.github.io)",
-      "WebFetch(domain:viscoanalyse-database.ifsttar.fr)"
+      "Bash(curl -s https://api.github.com/repos/vmai92/Mypackage.jl/contents)",
+      "Bash(python -c \"import sys,json; [print\\(f[\\\\\"name\\\\\"], f[\\\\\"type\\\\\"]\\) for f in json.load\\(sys.stdin\\)]\")",
+      "Bash(curl -s https://api.github.com/repos/vmai92/Mypackage.jl/contents/.github/workflows)",
+      "Bash(python -c \"import sys,json; [print\\(f['name']\\) for f in json.load\\(sys.stdin\\)]\")",
+      "Bash(curl -s https://api.github.com/repos/vmai92/Mypackage.jl/contents/.github/workflows/CI.yml)",
+      "Bash(python -c \"import sys,json,base64; print\\(base64.b64decode\\(json.load\\(sys.stdin\\)['content']\\).decode\\(\\)\\)\")",
+      "Bash(curl -s https://api.github.com/repos/vmai92/Mypackage.jl/contents/docs)",
+      "Bash(curl -s https://api.github.com/repos/vmai92/Mypackage.jl/contents/docs/make.jl)",
+      "Bash(curl -s https://api.github.com/repos/vmai92/Mypackage.jl/contents/README.md)",
+      "Bash(python -c \"import sys,json,base64; sys.stdout.buffer.write\\(base64.b64decode\\(json.load\\(sys.stdin\\)['content']\\)\\)\")"
     ]
   }
 }
