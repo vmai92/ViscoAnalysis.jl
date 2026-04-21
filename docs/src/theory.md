@@ -52,7 +52,7 @@ temperature conditions independently of the frequency axis:
 
 Both are parametrised by frequency; a perfect thermorheologically simple material produces a unique curve independent of temperature.
 
-The continuity of these curves enables verification of the validity of the time–temperature equivalence principle
+The continuity of these curves enables verification of the validity of the time–temperature superposition principle
 
 ---
 

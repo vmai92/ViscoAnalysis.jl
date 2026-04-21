@@ -16,7 +16,7 @@ using ViscoAnalysis
 # ── 1. Configuration ──────────────────────────────────────────────────────────
 
 # Path to your Excel file (columns: T [°C], f [Hz], |E*| [MPa], φ [°])
-DATAFILE = joinpath(@__DIR__, "..", "..", "EBR_T0_T10_Ep2_test.xlsx")
+DATAFILE = joinpath(@__DIR__, "EBR_T0_T10_Ep2.xlsx")
 
 # Output directory for figures (created automatically)
 OUTDIR   = joinpath(@__DIR__, "..", "..", "results_quickstart")
@@ -76,6 +76,11 @@ end
 
 println("\nSaving model-fit plot → $OUTDIR")
 plot_model_fit(series, fit_results, OUTDIR; Tref=TREF)
+
+# ── 6. Export fitting parameters to Excel ────────────────────────────────────
+
+println("\nSaving fitting parameters → $OUTDIR/parametres_fitting.xlsx")
+save_fitting_results(series, fit_results, TREF, OUTDIR)
 
 println("\nDone. All figures saved in: $OUTDIR")
 

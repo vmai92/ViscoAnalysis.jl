@@ -37,44 +37,6 @@ end
 
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""
-    ModGM(X; Ei=nothing, taui=nothing) -> Function
-
-Return the Generalised Maxwell complex modulus function `G*(p)`.
-
-Provide either:
-- `Ei` (stiffnesses) → `X` is treated as the relaxation times τᵢ, **or**
-- `taui` (times) → `X` is treated as the stiffnesses Eᵢ, **or**
-- neither → `X = [E₁, E₂, …, τ₁, τ₂, …]` (concatenated, equal halves).
-
-# Example
-```julia
-Ei   = [1e4, 5e3, 1e3]
-taui = [1e-4, 1e-2, 1.0]
-model = ModGM(taui; Ei=Ei)
-G_star = model(1im * ω)
-```
-"""
-function ModGM(X; Ei=nothing, taui=nothing)
-    if Ei !== nothing
-        Ei_v, τi_v = Float64.(Ei), Float64.(X)
-    elseif taui !== nothing
-        Ei_v, τi_v = Float64.(X), Float64.(taui)
-    else
-        n    = length(X) ÷ 2
-        Ei_v = Float64.(X[begin:begin+n-1])
-        τi_v = Float64.(X[begin+n:end])
-    end
-    function Gmod(p)
-        l = Ei_v[1]
-        for i in 2:length(Ei_v)
-            l += (Ei_v[i] * τi_v[i] * p) / (1.0 + τi_v[i] * p)
-        end
-        return l
-    end
-    return Gmod
-end
-
 # ─────────────────────────────────────────────────────────────────────────────
 # WLF time-temperature superposition
 # ─────────────────────────────────────────────────────────────────────────────

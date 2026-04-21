@@ -97,7 +97,7 @@ export AbstractFitResult,
        model_name
 
 # I/O
-export load_data
+export load_data, save_fitting_results
 
 # Models
 export Mod2S2P1D, Mod1S2P1D, ModHS,

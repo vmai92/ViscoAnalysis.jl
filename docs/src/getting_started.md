@@ -79,13 +79,13 @@ This runs seven plots for every `DataSeries` and saves both **PDF** and **PNG** 
 
 | File | Plot |
 |------|------|
-| `isothermes_<name>.*` | \|E\*\| and φ vs frequency, one curve per temperature |
-| `isochrones_<name>.*` | \|E\*\| and φ vs temperature, one curve per frequency |
-| `Cole-Cole_<name>.*` | E₂ (imaginary) vs E₁ (real) |
-| `Black_<name>.*` | \|E\*\| vs φ (semi-log) |
-| `Kramers-Kronig_<name>.*` | Kramers-Kronig consistency check |
-| `WLF_<name>.*` | Shift factors log(aT) vs T with fitted WLF curve |
-| `WLF_stability_<name>.*` | WLF curves across all reference temperatures |
+| `Isothermes curves.*` | \|E\*\| and φ vs frequency, one curve per temperature |
+| `Isochrones curves.*` | \|E\*\| and φ vs temperature, one curve per frequency |
+| `Cole-Cole diagram.*` | E₂ (imaginary) vs E₁ (real) |
+| `Black diagram.*` | \|E\*\| vs φ (semi-log) |
+| `Kramers-Kronig verification.*` | Kramers-Kronig consistency check |
+| `Shift factors calculation.*` | Shift factors log(aT) vs T with fitted WLF curve |
+| `WLF multiple Trefs.*` | WLF curves across all reference temperatures |
 
 ---
 
@@ -117,16 +117,6 @@ Example output:
   h      =    0.625
   β      =    450.0
   residual = 0.00412
-```
-
-The returned `FitResult2S2P1D` object is **callable** — evaluate the fitted complex
-modulus at any angular frequency:
-
-```julia
-ω = 2π * 10.0          # 10 Hz at Tref
-E_star = result(ω)     # complex number [MPa]
-@show abs(E_star)              # |E*|  [MPa]
-@show angle(E_star) * 180/π   # φ     [°]
 ```
 
 ---

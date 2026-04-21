@@ -41,16 +41,18 @@ end
 """
     plot_isothermes(series, outdir)
 
-Isothermal curves: |E*| and φ vs frequency f [Hz], one curve per temperature.
-Saves `isothermes_<sheetname>.pdf/.png` in `outdir`.
+Isotherm curves: |E*| and φ vs frequency f [Hz], one curve per temperature.
+Saves `isothermes.pdf/.png` in `outdir`.
 """
 function plot_isothermes(series::Vector{DataSeries}, outdir::String)
     for d in series
         nom   = d.name
         clist = _couleur(length(d.list_temp))
-        fig   = plot(layout=(1, 2), size=(900, 750),
-                     plot_title="Isothermal curves — $nom",
-                     plot_titlefontsize=16)
+        fig   = plot(layout=(1,2), size=(1200,500),
+                     plot_title="Isotherm curves",
+                     plot_titlefontsize=16,
+                     bottom_margin=10Plots.mm, left_margin=8Plots.mm,
+                     legendfontsize=5)
 
         for (ic, T) in enumerate(d.list_temp)
             e   = d[T]
@@ -68,12 +70,12 @@ function plot_isothermes(series::Vector{DataSeries}, outdir::String)
 
         plot!(fig; subplot=1,
               xlabel="f [Hz]", ylabel=L"|E^*|\;[\mathrm{MPa}]",
-              title=L"|E^*|\;\mathrm{vs}\;f", grid=true, legend=:best)
+              title=L"|E^*|\;\mathrm{vs}\;f", grid=true, legend=:bottomright)
         plot!(fig; subplot=2,
               xlabel="f [Hz]", ylabel=L"\varphi\;[°]",
-              title=L"\varphi\;\mathrm{vs}\;f", grid=true, legend=:best)
+              title=L"\varphi\;\mathrm{vs}\;f", grid=true, legend=:topright)
 
-        _save_fig(fig, outdir, "isothermes_$nom")
+        _save_fig(fig, outdir, "Isotherm curves")
     end
 end
 
@@ -81,22 +83,24 @@ end
     plot_isochrones(series, outdir)
 
 Isochrone curves: |E*| and φ vs temperature T [°C], one curve per frequency.
-Saves `isochrones_<sheetname>.pdf/.png` in `outdir`.
+Saves `isochrones.pdf/.png` in `outdir`.
 """
 function plot_isochrones(series::Vector{DataSeries}, outdir::String)
     for d in series
         nom          = d.name
         list_freq_hz = sort(d[d.list_temp[1]]["f"])
         clist        = _couleur(length(list_freq_hz))
-        fig          = plot(layout=(1, 2), size=(900, 750),
-                            plot_title="Isochrone curves — $nom",
-                            plot_titlefontsize=16)
+        fig          = plot(layout=(1,2), size=(1200,500),
+                            plot_title="Isochrone curves",
+                            plot_titlefontsize=16,
+                            bottom_margin=10Plots.mm, left_margin=8Plots.mm)
 
         for (ic, f_hz) in enumerate(list_freq_hz)
             T_vals   = d.list_temp
             E_vals   = [d[T]["|M*|"][argmin(abs.(d[T]["f"] .- f_hz))] for T in T_vals]
             phi_vals = [d[T]["delta"][argmin(abs.(d[T]["f"] .- f_hz))] for T in T_vals]
             c        = clist[ic]
+
             plot!(fig, T_vals, E_vals; subplot=1,
                   yscale=:log10, markershape=:circle, ms=5,
                   mc=:white, msc=c, msw=1.5, lw=1.2, lc=c, label="f = $f_hz Hz")
@@ -107,12 +111,12 @@ function plot_isochrones(series::Vector{DataSeries}, outdir::String)
 
         plot!(fig; subplot=1,
               xlabel="T [°C]", ylabel=L"|E^*|\;[\mathrm{MPa}]",
-              title=L"|E^*|\;\mathrm{vs}\;T", grid=true, legend=:best)
+              title=L"|E^*|\;\mathrm{vs}\;T", grid=true, legend=:topright)
         plot!(fig; subplot=2,
               xlabel="T [°C]", ylabel=L"\varphi\;[°]",
-              title=L"\varphi\;\mathrm{vs}\;T", grid=true, legend=:best)
+              title=L"\varphi\;\mathrm{vs}\;T", grid=true, legend=:topleft)
 
-        _save_fig(fig, outdir, "isochrones_$nom")
+        _save_fig(fig, outdir, "Isochrone curves")
     end
 end
 
@@ -121,7 +125,7 @@ end
 
 Cole-Cole diagram: E₂ (imaginary) vs E₁ (real) on log-log axes,
 one scatter series per temperature.
-Saves `Cole-Cole_<sheetname>.pdf/.png` in `outdir`.
+Saves `Cole-Cole.pdf/.png` in `outdir`.
 """
 function plot_cole_cole(series::Vector{DataSeries}, outdir::String)
     for d in series
@@ -130,9 +134,11 @@ function plot_cole_cole(series::Vector{DataSeries}, outdir::String)
         nT    = length(d.list_temp)
         ncol  = nT > 8 ? 2 : 1
         fig   = plot(size=(900, 750),
-                     plot_title="Cole-Cole diagram — $nom",
+                     plot_title="Cole-Cole diagram",
                      plot_titlefontsize=14,
-                     legend_column=ncol)
+                     legend_column=ncol,
+                     bottom_margin=10Plots.mm, left_margin=8Plots.mm,
+                     legendfontsize=7)
 
         for (ic, T) in enumerate(d.list_temp)
             e    = d[T]
@@ -145,8 +151,8 @@ function plot_cole_cole(series::Vector{DataSeries}, outdir::String)
         end
 
         plot!(fig, xlabel=L"E_1\;[\mathrm{MPa}]",
-              ylabel=L"E_2\;[\mathrm{MPa}]", grid=true, legend=:best)
-        _save_fig(fig, outdir, "Cole-Cole_$nom")
+              ylabel=L"E_2\;[\mathrm{MPa}]", grid=true, legend=:topright)
+        _save_fig(fig, outdir, "Cole-Cole diagram")
     end
 end
 
@@ -154,65 +160,72 @@ end
     plot_black(series, outdir)
 
 Black diagram: |E*| vs φ on a semi-log axis, one scatter series per temperature.
-Saves `Black_<sheetname>.pdf/.png` in `outdir`.
+Saves `Black.pdf/.png` in `outdir`.
 """
 function plot_black(series::Vector{DataSeries}, outdir::String)
     for d in series
-        nom  = d.name
-        nT   = length(d.list_temp)
-        ncol = nT > 8 ? 2 : 1
-        fig  = plot(size=(900, 750),
-                    plot_title="Black diagram — $nom",
-                    plot_titlefontsize=14,
-                    legend_column=ncol)
+        nom   = d.name
+        nT    = length(d.list_temp)
+        clist = _couleur(nT)
+        # Largeur adaptée : plus de colonnes dans la légende si beaucoup de températures
+        ncol  = nT > 8 ? 2 : 1
+        fig   = plot(size=(900, 750),
+                     plot_title="Black diagram",
+                     plot_titlefontsize=14,
+                     legend_column=ncol,
+                     bottom_margin=10Plots.mm, left_margin=8Plots.mm,
+                     legendfontsize=7)
 
         for (ic, T) in enumerate(d.list_temp)
             e = d[T]
             scatter!(fig, e["delta"], e["|M*|"];
-                     yscale=:log10, ms=6, mc=:white,
-                     msc=_couleur(nT)[ic], msw=1.5,
+                     yscale=:log10, ms=6, mc=:white, msc=clist[ic], msw=1.5,
                      label="T = $(round(Int, T)) °C")
         end
 
-        plot!(fig, xlabel=L"\varphi\;[°]",
-              ylabel=L"|E^*|\;[\mathrm{MPa}]", grid=true, legend=:best)
-        _save_fig(fig, outdir, "Black_$nom")
+        plot!(fig,
+              xlabel=L"\varphi\;[°]",
+              ylabel=L"|E^*|\;[\mathrm{MPa}]",
+              grid=true, legend=:topright)
+        _save_fig(fig, outdir, "Black diagram")
     end
 end
 
 """
     plot_kramers_kronig(series, outdir)
 
-Kramers-Kronig (BT2) verification: d log|E*|/d logω vs δ/90.
+Kramers-Kronig verification: d log|E*|/d logω vs δ/90.
 A perfect material follows the identity line y = x.
-Saves `Kramers-Kronig_<sheetname>.pdf/.png` in `outdir`.
+Saves `Kramers-Kronig.pdf/.png` in `outdir`.
 """
 function plot_kramers_kronig(series::Vector{DataSeries}, outdir::String)
     for d in series
         nom   = d.name
-        build_Kramers_Kronig!(d)
+        build_Kramers_Kronig!(d)   
         nT    = length(d.list_temp)
         clist = _couleur(nT)
         ncol  = nT > 8 ? 2 : 1
         fig   = plot(size=(900, 750),
-                     plot_title="Kramers-Kronig verification — $nom",
+                     plot_title="Kramers-Kronig Verification",
                      plot_titlefontsize=14,
-                     legend_column=ncol)
+                     legend_column=ncol,
+                     bottom_margin=10Plots.mm, left_margin=8Plots.mm,
+                     legendfontsize=7)
 
         for (ic, T) in enumerate(d.list_temp)
             e = d[T]
-            isempty(e["delta/90"]) && continue
+            isempty(e["delta/90"]) && continue   
             scatter!(fig, e["delta/90"], e["dlog|M*|/dlogomega"];
                      ms=6, mc=:white, msc=clist[ic], msw=1.5,
                      label="T = $(round(Int, T)) °C")
         end
 
         plot!(fig, [0.0, 1.0], [0.0, 1.0];
-              lw=1.5, lc=:black, label="y = x (reference)")
+              lw=1.5, lc=:black, label="y = x (référence)")
         plot!(fig, xlabel=L"\delta\;/\;90",
               ylabel=L"\mathrm{d}\log|E^*|\;/\;\mathrm{d}\log\omega",
-              grid=true, legend=:best)
-        _save_fig(fig, outdir, "Kramers-Kronig_$nom")
+              grid=true, legend=:topleft)
+        _save_fig(fig, outdir, "Kramers-Kronig verification")
     end
 end
 
@@ -221,7 +234,7 @@ end
 
 Shift factors log(aT) vs T with WLF curve, iterated over all reference
 temperatures.
-Saves `WLF_<sheetname>.pdf/.png` in `outdir`.
+Saves `WLF.pdf/.png` in `outdir`.
 """
 function plot_wlf(series::Vector{DataSeries}, outdir::String)
     for d in series
@@ -231,9 +244,11 @@ function plot_wlf(series::Vector{DataSeries}, outdir::String)
         clist = _couleur(nT)
         ncol  = nT > 8 ? 2 : 1
         fig   = plot(size=(900, 750),
-                     plot_title="Shift factors + WLF — $nom",
+                     plot_title="Shift factors calculation",
                      plot_titlefontsize=14,
-                     legend_column=ncol)
+                     legend_column=ncol,
+                     bottom_margin=10Plots.mm, left_margin=8Plots.mm,
+                     legendfontsize=7)
 
         for (ic, Tref) in enumerate(d.list_temp[2:end])
             loga = build_shift_factors!(d, Float64(Tref), 1)
@@ -243,12 +258,12 @@ function plot_wlf(series::Vector{DataSeries}, outdir::String)
                      label="T_ref = $Tref °C")
             plot!(fig, collect(lT), d.wlf.(collect(lT));
                   lw=1.5, lc=c,
-                  label="WLF C1=$(round(d.C1, digits=1)) C2=$(round(d.C2, digits=1))")
+                  label="WLF C1=$(round(d.C1,digits=1)) C2=$(round(d.C2,digits=1))")
         end
 
         plot!(fig, xlabel="T (°C)",
-              ylabel=L"\log(a_{T,T_{\mathrm{ref}}})", grid=true, legend=:best)
-        _save_fig(fig, outdir, "WLF_$nom")
+              ylabel=L"\log(a_{T,T_{\mathrm{ref}}})", grid=true, legend=:topright)
+        _save_fig(fig, outdir, "Shift factors calculation")
     end
 end
 
@@ -273,29 +288,34 @@ function plot_wlf_stability(series::Vector{DataSeries}, outdir::String)
         clist = _couleur(nT)
         ncol  = nT > 8 ? 2 : 1
         fig   = plot(size=(900, 750),
-                     plot_title="WLF stability — $nom",
+                     plot_title="WLF multiple Trefs",
                      plot_titlefontsize=14,
-                     legend_column=ncol)
+                     legend_column=ncol,
+                     bottom_margin=10Plots.mm, left_margin=8Plots.mm,
+                     legendfontsize=7)
 
         for (ic, Tref) in enumerate(d.list_temp)
             loga = build_shift_factors!(d, Float64(Tref), 1)
             scatter!(fig, d.list_temp, loga;
                      ms=5, mc=:white, msc=clist[ic], msw=1.5,
                      label="T_ref = $Tref °C")
+
             wlf_f, _, _ = change_Tref_WLF(_C1, _C2, _Tref, Float64(Tref))
             plot!(fig, lT_v, wlf_f.(lT_v); lw=1.2, lc=:black, label="")
+
             if ic > 1
-                tref_mid      = 0.5 * (Tref + d.list_temp[ic-1])
+                tref_mid      = 0.5*(Tref + d.list_temp[ic-1])
                 wlf_mid, _, _ = change_Tref_WLF(_C1, _C2, _Tref, tref_mid)
                 plot!(fig, lT_v, wlf_mid.(lT_v); lw=1.0, lc=:black, ls=:dash, label="")
             end
         end
 
-        plot!(fig, [NaN], [NaN]; lw=1.2, lc=:black,           label="WLF (tested Tref)")
-        plot!(fig, [NaN], [NaN]; lw=1.0, lc=:black, ls=:dash, label="WLF (intermediate Tref)")
+        plot!(fig, [NaN], [NaN]; lw=1.2, lc=:black,           label="WLF (Test Tref)")
+        plot!(fig, [NaN], [NaN]; lw=1.0, lc=:black, ls=:dash, label="WLF (Intermediate Tref)")
+
         plot!(fig, xlabel="T (°C)",
-              ylabel=L"\log(a_{T,T_{\mathrm{ref}}})", grid=true, legend=:best)
-        _save_fig(fig, outdir, "WLF_stability_$nom")
+              ylabel=L"\log(a_{T,T_{\mathrm{ref}}})", grid=true, legend=:topright)
+        _save_fig(fig, outdir, "WLF multiple Trefs")
     end
 end
 
@@ -319,7 +339,8 @@ function plot_model_fit(series::Vector{DataSeries},
                         ind_freq::Int = 1)
 
     clist  = _couleur(length(series))
-    fig    = plot(layout=(1, 2), size=(800, 600))
+    fig   = plot(layout=(1,2), size=(1200,500),
+                 bottom_margin=10Plots.mm, left_margin=8Plots.mm)
     mnames = unique(model_name.(fit_results))
     mlabel = length(mnames) == 1 ? mnames[1] : join(mnames, "/")
 
@@ -351,10 +372,10 @@ function plot_model_fit(series::Vector{DataSeries},
 
     plot!(fig; subplot=1,
           xlabel=L"\omega a_T \;[\mathrm{rad\cdot s}^{-1}]",
-          ylabel=L"|E^*|\;[\mathrm{MPa}]", grid=true)
+          ylabel=L"|E^*|\;[\mathrm{MPa}]", grid=true, legend=:bottomright)
     plot!(fig; subplot=2,
           xlabel=L"\omega a_T \;[\mathrm{rad\cdot s}^{-1}]",
-          ylabel=L"\phi\;[°]", grid=true)
+          ylabel=L"\phi\;[°]", grid=true, legend=:bottomright)
 
     _save_fig(fig, outdir, "Results_$(mlabel)_Tref$(round(Int, Tref))")
 end

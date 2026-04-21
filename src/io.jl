@@ -109,3 +109,62 @@ function _parse_sheet(filename::String, sheet::Int,
                           nothing, 0.0, 0.0, nothing, 0.0, 0.0)
     end
 end
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+"""
+    save_fitting_results(series, results, Tref, outdir)
+
+Export fitting parameters to an Excel file `parametres_fitting.xlsx` in `outdir`.
+
+Each row corresponds to one `DataSeries` / `FitResult` pair.
+Columns are automatically adapted to the model type (2S2P1D, 1S2P1D, Huet-Sayegh).
+
+# Arguments
+- `series`  — `Vector{DataSeries}` used for fitting (sheet names become row labels).
+- `results` — `Vector{<:AbstractFitResult}` returned by `fit2S2P1D`, `fit1S2P1D`, or `fitHS`.
+- `Tref`    — Reference temperature used during fitting [°C].
+- `outdir`  — Output directory (must exist).
+
+# Example
+```julia
+results = [fit2S2P1D(d, 10.0) for d in series]
+save_fitting_results(series, results, 10.0, "results/")
+```
+"""
+function save_fitting_results(series::Vector{DataSeries},
+                               results::Vector{<:AbstractFitResult},
+                               Tref::Float64, outdir::String)
+
+    _param_headers(::FitResult2S2P1D) = ["E∞ [MPa]", "E₀ [MPa]", "δ", "τ_E [s]", "k", "h", "β"]
+    _param_headers(::FitResult1S2P1D) = ["E₀ [MPa]", "δ", "τ_E [s]", "k", "h", "β"]
+    _param_headers(::FitResultHS)     = ["E∞ [MPa]", "E₀ [MPa]", "δ", "τ_E [s]", "k", "h"]
+
+    _param_values(r::FitResult2S2P1D) = [r.Einf, r.E0, r.delta, r.tauE, r.k, r.h, r.beta]
+    _param_values(r::FitResult1S2P1D) = [r.E0,   r.delta, r.tauE, r.k, r.h, r.beta]
+    _param_values(r::FitResultHS)     = [r.Einf, r.E0, r.delta, r.tauE, r.k, r.h]
+
+    excel_path = joinpath(outdir, "parametres_fitting.xlsx")
+    XLSX.openxlsx(excel_path, mode="w") do xf
+        sheet = xf[1]
+        XLSX.rename!(sheet, "Fitting Results")
+
+        param_hdrs = _param_headers(results[1])
+        headers    = vcat(["Echantillon", "Modèle", "Tref (°C)"], param_hdrs, ["Résidu"])
+        for (j, h) in enumerate(headers)
+            sheet[1, j] = h
+        end
+
+        for (i, (d, r)) in enumerate(zip(series, results))
+            sheet[i+1, 1] = d.name
+            sheet[i+1, 2] = model_name(r)
+            sheet[i+1, 3] = Tref
+            for (j, v) in enumerate(_param_values(r))
+                sheet[i+1, 3+j] = v
+            end
+            sheet[i+1, 3 + length(_param_values(r)) + 1] = r.residual
+        end
+    end
+
+    println("Fitting results saved → $excel_path")
+end

@@ -16,7 +16,6 @@ WLF time-temperature superposition functions.  All model constructors return
 Mod2S2P1D
 Mod1S2P1D
 ModHS
-ModGM
 ```
 
 ---
@@ -70,15 +69,4 @@ f_new, C1_new, C2_new = change_Tref_WLF(19.5, 108.0, 10.0, 0.0)
 log_aT_at0 = f_new(25.0)   # log₁₀(aT) with Tref = 0 °C
 ```
 
-### Generalised Maxwell model
 
-```julia
-# Specify stiffnesses; X = relaxation times
-Ei    = [1000.0, 5000.0, 20000.0]   # MPa
-tau_i = [1e-1,   1e-3,   1e-5]      # s
-model_gm = ModGM(tau_i; Ei=Ei)
-
-# Or concatenate [Ei..., taui...] into a single vector
-X = vcat(Ei, tau_i)
-model_gm2 = ModGM(X)
-```

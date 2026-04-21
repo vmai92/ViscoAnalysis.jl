@@ -82,14 +82,15 @@ After running the quickstart example, the output directory contains:
 
 ```
 results/
-├── isothermes_<name>.pdf / .png
-├── isochrones_<name>.pdf / .png
-├── Cole-Cole_<name>.pdf / .png
-├── Black_<name>.pdf / .png
-├── Kramers-Kronig_<name>.pdf / .png
-├── WLF_<name>.pdf / .png
-├── WLF_stability_<name>.pdf / .png
-└── Results_Tref10.pdf / .png
+├── Isothermes.pdf / .png
+├── Isochrones.pdf / .png
+├── Cole-Cole diagram.pdf / .png
+├── Black diagram.pdf / .png
+├── Kramers-Kronig verification.pdf / .png
+├── Shift factors calculation.pdf / .png
+├── WLF multiple Trefs.pdf / .png
+├── Results_Tref10.pdf / .png
+└── parametres_fitting.xlsx          ← model parameters (E∞, E₀, δ, τ, k, h, β) + residual
 ```
 
 ---
