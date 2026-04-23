@@ -1,7 +1,7 @@
 name = "ViscoAnalysis"
 uuid = "c8e6a853-8e68-4a27-b291-bfa7f0c13b87"
 version = "0.1.0"
-authors = ["Van Than MAI"]
+authors = ["Jean-François BARTHÉLÉMY, Ciryle SOMÉ, Van Than MAI"]
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
